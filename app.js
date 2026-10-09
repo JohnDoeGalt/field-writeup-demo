@@ -47,16 +47,25 @@ function unsentBanner(settings, jobs) {
   if (!late.length) return null;
   return h('div', { class: 'note unsent', role: 'alert' },
     h('p', {}, h('strong', { text: `⚠️ ${late.length === 1 ? '1 write-up is' : `${late.length} write-ups are`} done but not sent to the office yet.` })),
-    h('button', { class: 'btn primary big', type: 'button', text: 'Send now', onclick: () => exportPackage(settings.exportMode === 'since-last' ? 'since-last' : 'everything', settings) }));
+    h('button', { class: 'btn primary big', type: 'button', text: 'Send now', onclick: () => exportPackage(quickSend(settings), settings) }));
 }
 
-// The Export button(s) the techs see, per the exportMode setting (FR-15).
+// S29: a quick send only sends jobs never sent (or changed since), unless the office chose
+// "everything". Used by every Send shortcut so none of them double-sends.
+const quickSend = (settings) => (settings.sendMode === 'everything' ? 'everything' : 'since-last');
+
+// The Send button(s) the techs see, per the sendMode setting (FR-15; default "both" since S29).
 function exportButtons(settings, jobs) {
   if (!jobs.length) return [];
   const fresh = selectForExport(jobs, 'since-last').length;
-  const all = h('button', { class: 'btn big', onclick: () => exportPackage('everything', settings), text: `📦 Send all my jobs to the office (${jobs.length})` });
-  const since = h('button', { class: 'btn big', onclick: () => exportPackage('since-last', settings), text: `📦 Send my new jobs to the office (${fresh})` });
-  return { everything: [all], 'since-last': [since], both: [since, all] }[settings.exportMode] || [all];
+  const mode = settings.sendMode || 'both';
+  const since = fresh
+    ? h('button', { class: 'btn big', onclick: () => exportPackage('since-last', settings), text: `📦 Send new jobs to the office (${fresh})` })
+    : h('p', { class: 'note ok-note', text: '✓ Everything is sent. Nothing new to send.' });
+  const all = mode === 'both'
+    ? h('button', { class: 'btn', onclick: () => exportPackage('everything', settings), text: `Resend everything (${jobs.length})` })
+    : h('button', { class: 'btn big', onclick: () => exportPackage('everything', settings), text: `📦 Send all my jobs to the office (${jobs.length})` });
+  return { everything: [all], 'since-last': [since], both: [since, all] }[mode] || [since, all];
 }
 
 // ---------- home ----------
@@ -101,7 +110,7 @@ async function renderHome(settings) {
 function versionLine() {
   const line = h('p', { class: 'muted small version', text: 'App version: …' });
   Promise.resolve(window.caches?.keys()).then((keys) => {
-    line.textContent = `App version: ${keys?.find((k) => k.startsWith('fw-'))?.slice(3) || '2026.10.08-1734'}`;
+    line.textContent = `App version: ${keys?.find((k) => k.startsWith('fw-'))?.slice(3) || '2026.10.09-1038'}`;
   }).catch(() => {});
   return line;
 }
@@ -193,9 +202,9 @@ function renderSettings(settings) {
         h('summary', { text: 'Office settings (techs can ignore this)' }),
         h('label', { class: 'field' },
           h('span', { class: 'label', text: 'What the send button sends' }),
-          h('select', { onchange: async (e) => { s.exportMode = e.target.value; await store.patchSettings({ exportMode: s.exportMode }); toast('Saved'); } },
-            [['everything', 'All jobs on the phone (one button)'], ['since-last', 'Only new jobs since last send (one button)'], ['both', 'Show both buttons']]
-              .map(([v, t]) => h('option', { value: v, text: t, selected: (settings.exportMode || 'everything') === v })))),
+          h('select', { onchange: async (e) => { s.sendMode = e.target.value; await store.patchSettings({ sendMode: s.sendMode }); toast('Saved'); } },
+            [['both', 'New jobs, plus "Resend everything" (recommended)'], ['since-last', 'Only new jobs (one button)'], ['everything', 'All jobs on the phone every time (one button)']]
+              .map(([v, t]) => h('option', { value: v, text: t, selected: (settings.sendMode || 'both') === v })))),
         // FR-17: Nominatim's policy requires the lookup can be switched off.
         h('label', { class: 'check' },
           h('input', {
@@ -798,7 +807,7 @@ async function renderEditor(id, settings) {
           h('button', {
             class: 'btn primary',
             text: '📦 Send my jobs to the office',
-            onclick: () => exportPackage(settings.exportMode === 'since-last' ? 'since-last' : 'everything', settings),
+            onclick: () => exportPackage(quickSend(settings), settings),
           }),
           h('button', {
             class: 'btn ghost',

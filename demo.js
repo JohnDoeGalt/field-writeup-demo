@@ -27,7 +27,7 @@ globalThis.Date = DemoDate;
 
 // ---------- sending: no real share sheet or downloads from the demo ----------
 navigator.canShare = () => true;
-navigator.share = async () => demoNote("Demo: your phone's share menu (Mail, Dropbox…) would open here. Counted as sent.");
+navigator.share = () => demoNote("Your phone's share menu (Mail, Dropbox…) would open here, with the package attached. In this demo it counts as sent when you tap OK.");
 
 // ---------- sample data ----------
 const pad = (n) => String(n).padStart(2, '0');
@@ -164,15 +164,29 @@ const css = `
 .dm-files div{padding:6px 0;border-top:1px solid #eee7fb;overflow-wrap:anywhere}.dm-files div.new{color:#15803d;font-weight:700}
 .dm-files small{display:block;font-family:system-ui,sans-serif;color:#6b5a8e}
 .dm-tries{margin:0;padding-left:20px;display:grid;gap:6px}
-.dm-note{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:42;width:min(520px,calc(100% - 32px));background:#5b21b6;color:#fff;border-radius:10px;padding:10px 14px;font:600 14px system-ui,sans-serif;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
+.dm-pop{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgb(30 20 51 / .55)}
+.dm-card{background:#fff;color:#1e1433;border:3px solid #5b21b6;border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:16px/1.45 system-ui,sans-serif;box-shadow:0 12px 40px rgb(0 0 0 / .35)}
+.dm-card p{margin:0}.dm-tag{font:700 12px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5b21b6}
 .dm-muted{color:#6b5a8e;font-size:13px;margin:0}`;
 document.head.append(Object.assign(document.createElement('style'), { textContent: css }));
 
+// S29: a demo explanation is a box in the middle of the screen that stays until OK, so it gets read.
+// Resolves when OK is tapped (the share stand-in waits for it, like the real share sheet would).
 function demoNote(msg) {
-  const n = Object.assign(document.createElement('div'), { className: 'dm-note', textContent: msg });
-  n.setAttribute('role', 'status');
-  document.body.append(n);
-  setTimeout(() => n.remove(), 3600);
+  document.querySelector('.dm-pop')?.remove();
+  return new Promise((resolve) => {
+    const pop = Object.assign(document.createElement('div'), { className: 'dm-pop' });
+    pop.setAttribute('role', 'alertdialog');
+    pop.setAttribute('aria-label', 'Demo note');
+    const card = Object.assign(document.createElement('div'), { className: 'dm-card' });
+    const ok = Object.assign(document.createElement('button'), { type: 'button', className: 'dm-btn main', textContent: 'OK' });
+    ok.addEventListener('click', () => { pop.remove(); resolve(); });
+    card.append(Object.assign(document.createElement('div'), { className: 'dm-tag', textContent: '🧪 Demo' }),
+      Object.assign(document.createElement('p'), { textContent: msg }), ok);
+    pop.append(card);
+    document.body.append(pop);
+    ok.focus();
+  });
 }
 
 const tab = Object.assign(document.createElement('button'), { className: 'dm-tab', type: 'button', textContent: '🧪 Demo' });

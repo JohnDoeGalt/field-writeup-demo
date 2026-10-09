@@ -156,7 +156,7 @@ export async function restoreBackup(file) {
     // A-28: a new phone also gets its settings back, but only into empty boxes.
     if (saved && typeof saved === 'object') {
       const now = await store.getSettings();
-      const filled = Object.fromEntries(['techName', 'officeEmail', 'woPrefix', 'exportMode']
+      const filled = Object.fromEntries(['techName', 'officeEmail', 'woPrefix', 'sendMode']
         .filter((k) => typeof saved[k] === 'string' && saved[k] && !now[k]).map((k) => [k, saved[k]]));
       if (Object.keys(filled).length) await store.patchSettings(filled);
     }

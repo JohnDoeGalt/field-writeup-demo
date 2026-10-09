@@ -87,7 +87,7 @@ export function buildPackage(jobs, { tech = '', appVersion = '', now = new Date(
   const meta = {
     format: FORMAT, version: VERSION, schema: SCHEMA_VERSION, app_version: appVersion,
     exported_at: now.toISOString(), tech, job_count: rows.length,
-    ...(settings && { settings: { techName: settings.techName, officeEmail: settings.officeEmail, woPrefix: settings.woPrefix, exportMode: settings.exportMode } }),
+    ...(settings && { settings: { techName: settings.techName, officeEmail: settings.officeEmail, woPrefix: settings.woPrefix, sendMode: settings.sendMode } }),
   };
   files['jobs.json'] = strToU8(JSON.stringify({ ...meta, jobs: rows }, null, 1));
   files['README.txt'] = strToU8(README(meta));

@@ -77,8 +77,9 @@ export async function listPackages() {
 }
 export const deletePackages = (ids) => run('packages', 'readwrite', (s) => { ids.forEach((id) => s.delete(id)); });
 
-// exportMode: which Export button(s) the techs see (FR-15): 'everything' | 'since-last' | 'both'.
-const DEFAULT_SETTINGS = { techName: '', officeEmail: '', woPrefix: '', exportMode: 'everything', lastExportAt: null };
+// sendMode: which Send button(s) the techs see (FR-15): 'both' (default since S29) | 'since-last' | 'everything'.
+// (Renamed from exportMode so every phone picks up the new default; the old key is ignored.)
+const DEFAULT_SETTINGS = { techName: '', officeEmail: '', woPrefix: '', sendMode: 'both', lastExportAt: null };
 export async function getSettings() {
   return { ...DEFAULT_SETTINGS, ...(await run('kv', 'readonly', (s) => s.get('settings'))) };
 }
