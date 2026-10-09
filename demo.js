@@ -17,6 +17,9 @@ const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null;
 const S = load() || { offsetDays: 0, signal: true, files: [], seeded: false, tried: [] };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* private mode */ } };
 
+// The Demo tab's signal switch is what the app sees as signal (so "No signal" can be tried).
+Object.defineProperty(navigator, 'onLine', { get: () => S.signal, configurable: true });
+
 // ---------- the demo clock: "skip ahead" moves what the whole app thinks today is ----------
 const RealDate = Date;
 class DemoDate extends RealDate {

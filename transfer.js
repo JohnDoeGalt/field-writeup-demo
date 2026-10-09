@@ -63,7 +63,7 @@ async function keepPackage(file, kind, jobs, how) {
 // Packages screen: send a kept package again, exactly as it was made.
 export async function sendAgain(id) {
   const pkg = await store.getPackage(id);
-  if (!pkg) return;
+  if (!pkg || await noSignal()) return;
   const settings = await store.getSettings();
   const file = new File([pkg.bytes], pkg.name, { type: 'application/zip' });
   const how = await shareOrSave(file, pkg.kind === 'backup' ? 'Write-up backup' : `${plural(pkg.jobs.length, 'write-up')} from ${settings.techName}`, settings);
@@ -74,17 +74,26 @@ export async function sendAgain(id) {
   hooks.route();
 }
 
+// S31 / FR-27: with no signal, say so plainly and send nothing, so nothing is ever marked
+// "sent" that couldn't have gone. (navigator.onLine === false is reliable for "definitely
+// offline"; a weak signal can still look online, which only real delivery checks can catch.)
+async function noSignal() {
+  if (navigator.onLine !== false) return false;
+  await ask('No signal', 'Nothing was sent. Try again when you have signal.', [{ label: 'OK', value: true, primary: true }]);
+  return true;
+}
+
 let exporting = false; // stops a double tap from making two packages (A-02)
 
 export async function exportPackage(mode, settings) {
-  if (exporting) return;
+  if (exporting || await noSignal()) return;
   exporting = true;
   hooks.closeEditor(); // save anything still being typed first
   try {
     const all = await store.listJobs();
     const jobs = selectForExport(all, mode);
     if (!jobs.length) {
-      toast(all.length ? 'Nothing new to send. Everything was sent already.' : 'No jobs on this phone yet.');
+      toast(selectForExport(all, 'everything').length ? 'Nothing new to send. Everything was sent already.' : 'No finished write-ups to send yet.');
       return;
     }
     const now = new Date();

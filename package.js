@@ -32,9 +32,11 @@ function bytesToDataUrl(bytes, mime) {
 
 // Which jobs go into the package. 'everything' = all; 'since-last' = new or changed since
 // that job was last exported (a job never exported always counts).
+// S30: only FINISHED write-ups are ever sent; unfinished ones stay on the phone until completed.
 export function selectForExport(jobs, mode) {
-  if (mode !== 'since-last') return jobs;
-  return jobs.filter((j) => !j.exported_at || j.updated_at > j.exported_at);
+  const ready = jobs.filter((j) => j.status !== 'draft');
+  if (mode !== 'since-last') return ready;
+  return ready.filter((j) => !j.exported_at || j.updated_at > j.exported_at);
 }
 
 const README = (meta) => `WRITE-UP PACKAGE

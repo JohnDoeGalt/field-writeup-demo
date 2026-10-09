@@ -56,15 +56,16 @@ const quickSend = (settings) => (settings.sendMode === 'everything' ? 'everythin
 
 // The Send button(s) the techs see, per the sendMode setting (FR-15; default "both" since S29).
 function exportButtons(settings, jobs) {
-  if (!jobs.length) return [];
+  const ready = selectForExport(jobs, 'everything').length; // finished write-ups only (S30)
+  if (!ready) return []; // nothing finished yet: nothing to send
   const fresh = selectForExport(jobs, 'since-last').length;
   const mode = settings.sendMode || 'both';
   const since = fresh
     ? h('button', { class: 'btn big', onclick: () => exportPackage('since-last', settings), text: `📦 Send new jobs to the office (${fresh})` })
     : h('p', { class: 'note ok-note', text: '✓ Everything is sent. Nothing new to send.' });
   const all = mode === 'both'
-    ? h('button', { class: 'btn', onclick: () => exportPackage('everything', settings), text: `Resend everything (${jobs.length})` })
-    : h('button', { class: 'btn big', onclick: () => exportPackage('everything', settings), text: `📦 Send all my jobs to the office (${jobs.length})` });
+    ? h('button', { class: 'btn', onclick: () => exportPackage('everything', settings), text: `Resend everything (${ready})` })
+    : h('button', { class: 'btn big', onclick: () => exportPackage('everything', settings), text: `📦 Send all my jobs to the office (${ready})` });
   return { everything: [all], 'since-last': [since], both: [since, all] }[mode] || [since, all];
 }
 
@@ -110,7 +111,7 @@ async function renderHome(settings) {
 function versionLine() {
   const line = h('p', { class: 'muted small version', text: 'App version: …' });
   Promise.resolve(window.caches?.keys()).then((keys) => {
-    line.textContent = `App version: ${keys?.find((k) => k.startsWith('fw-'))?.slice(3) || '2026.10.09-1038'}`;
+    line.textContent = `App version: ${keys?.find((k) => k.startsWith('fw-'))?.slice(3) || '2026.10.09-1107'}`;
   }).catch(() => {});
   return line;
 }
